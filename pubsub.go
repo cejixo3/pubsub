@@ -1,8 +1,13 @@
 /*
 	Simple in-memory implementation of Pub/Sub with polling an approach. You can use this package for building pub/sub
 	systems where the main method of obtaining data is poling (like cases with http). Messages are saved until the
-	subscriber picks them up. This package uses []byte as "message format". Each subscription stores an slice of
-	pointers to messages.
+	subscriber picks them up. This package uses []byte as "message format".
+
+	Each subscription stores an slice of pointers to messages (no copy - just pointers).
+	Storage complexity: messages: O(n) + pointers: O(k*n) where
+	n - number of messages,
+	k - number of subscribers
+	Also topic name and subscriber name must take part in complexity calculation
 */
 package pubsub
 
@@ -39,9 +44,9 @@ type subscriptions struct {
 	hm  map[string]*sliceStorage
 }
 
-// Broker interface helps to hide `pubSub` from direct access/initialization and make ability to
-// pass instance of Broker into another function, declare variables like: var br pubsub.Broker, etc
-type Broker interface {
+// PubSuber interface helps to hide `pubSub` from direct access/initialization and make ability to
+// pass instance of PubSuber into another function, declare variables like: var br pubsub.PubSuber, etc
+type PubSuber interface {
 	// Publish message
 	Publish(tn string, b []byte)
 	// Subscribe for messages by topic and subscription name
@@ -53,21 +58,22 @@ type Broker interface {
 }
 
 // List of subscriptions protected by RW mutex
-// RW mutex used because access to `t` not always means write operations
+// RW mutex used because access to `hm` not always means write operations
 type pubSub struct {
 	mux sync.RWMutex
-	t   map[string]*subscriptions
+	hm  map[string]*subscriptions
 }
 
 // Publish message (b) by topic name (tn) if have subscriptions already
+// Complexity: O(N+1)
 func (p *pubSub) Publish(tn string, b []byte) {
 	p.mux.RLock()
-	subs, ok := p.t[tn]
+	subs, ok := p.hm[tn]
 	p.mux.RUnlock()
 	if ok {
 		subs.mux.Lock()
-		for sn := range subs.hm {
-			subs.hm[sn].add(b)
+		for _, sub := range subs.hm {
+			sub.add(b)
 		}
 		subs.mux.Unlock()
 	}
@@ -78,8 +84,8 @@ func (p *pubSub) Publish(tn string, b []byte) {
 func (p *pubSub) Subscribe(tn, sn string) {
 	p.mux.Lock()
 	defer p.mux.Unlock()
-	if subs, ok := p.t[tn]; !ok {
-		p.t[tn] = &subscriptions{
+	if subs, ok := p.hm[tn]; !ok {
+		p.hm[tn] = &subscriptions{
 			hm: map[string]*sliceStorage{sn: &sliceStorage{}},
 		}
 	} else {
@@ -92,10 +98,10 @@ func (p *pubSub) Subscribe(tn, sn string) {
 }
 
 // Unsubscribe by topic name (tn) and subscriber name (sn)
-// @todo implement removing keys from p.t[tn] when subscription list is empty
+// @todo implement removing keys from p.hm[tn] when subscription list is empty
 func (p *pubSub) Unsubscribe(tn, sn string) {
 	p.mux.RLock()
-	subs, ok := p.t[tn]
+	subs, ok := p.hm[tn]
 	p.mux.RUnlock()
 	if ok {
 		subs.mux.Lock()
@@ -107,9 +113,10 @@ func (p *pubSub) Unsubscribe(tn, sn string) {
 // Fetching messages for topic name (tn) and subscriber name (sn)
 // error raises if no subscriptions
 // nil, nil should be returned if all messages was fetched already
+// Complexity: O(3)
 func (p *pubSub) Poll(tn, sn string) ([]byte, error) {
 	p.mux.RLock()
-	subs, ok := p.t[tn]
+	subs, ok := p.hm[tn]
 	p.mux.RUnlock()
 	if !ok {
 		return nil, ErrNoSubscriptions
@@ -124,10 +131,10 @@ func (p *pubSub) Poll(tn, sn string) ([]byte, error) {
 	}
 }
 
-// Constructor. Creates an instance of Broker
-// Using a broker interface instead of a pointer to pubSub guarantees the using of this constructor in other packages
-func New() Broker {
+// Constructor. Creates an instance of PubSuber
+// Using a PubSuber interface instead of a pointer to pubSub guarantees the using of this constructor in other packages
+func New() PubSuber {
 	return &pubSub{
-		t: map[string]*subscriptions{},
+		hm: map[string]*subscriptions{},
 	}
 }

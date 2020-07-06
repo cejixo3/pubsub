@@ -23,19 +23,19 @@ import (
 )
 
 func main() {
-	broker := pubsub.New()
+	ps := pubsub.New()
 	r := gin.Default()
 	apiv1 := r.Group("/api/v1")
 
 	apiv1.PUT("/subscribe/tn/:topic-name/sn/:subscription-name", func(c *gin.Context) {
 		// some validation here
-		broker.Subscribe(c.Param("topic-name"), c.Param("subscription-name"))
+		ps.Subscribe(c.Param("topic-name"), c.Param("subscription-name"))
 		c.AbortWithStatus(http.StatusNoContent)
 	})
 
 	apiv1.DELETE("/unsubscribe/tn/:topic-name/sn/:subscription-name", func(c *gin.Context) {
 		// some validation here
-		broker.Unsubscribe(c.Param("topic-name"), c.Param("subscription-name"))
+		ps.Unsubscribe(c.Param("topic-name"), c.Param("subscription-name"))
 		c.AbortWithStatus(http.StatusNoContent)
 	})
 
@@ -45,13 +45,13 @@ func main() {
 		if err != nil {
 			// process error
 		}
-		broker.Publish(c.Param("topic-name"), b)
+		ps.Publish(c.Param("topic-name"), b)
 		c.AbortWithStatus(http.StatusAccepted)
 	})
 
 	apiv1.GET("/unsubscribe/tn/:topic-name/sn/:subscription-name", func(c *gin.Context) {
 		// some validation here
-		if msg, err := broker.Poll(c.Param("topic-name"), c.Param("subscription-name")); err == pubsub.ErrNoSubscriptions {
+		if msg, err := ps.Poll(c.Param("topic-name"), c.Param("subscription-name")); err == pubsub.ErrNoSubscriptions {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		} else {
@@ -74,9 +74,11 @@ make test
 
 ### Todo
 - [ ] Prettify tests
-- [ ] Implement removing keys from p.t[tn] when subscription list is empty
+- [ ] Implement removing keys from p.hm[tn] when subscription list is empty
 - [ ] Add ability to use custom storage (for testing another data structures for example)
-- [ ] Add benchmarks 
+- [ ] Add benchmarks
 - [ ] Optimize map key sizes (use hashing for example)
 - [ ] Play with garbage collector for reducing gc count (in application, not library)
 - [ ] Improve naming in code 
+- [ ] Maybe separate ```pubsub.go``` into several parts (```errors.go```,```storage.go```, etc)
+- [ ] Improve pubslish method performance (run in several goroutines for example, or something else) 
