@@ -81,4 +81,4 @@ make test
 - [ ] Play with garbage collector for reducing gc count (in application, not library)
 - [ ] Improve naming in code 
 - [ ] Maybe separate ```pubsub.go``` into several parts (```errors.go```,```storage.go```, etc)
-- [ ] Improve pubslish method performance (run in several goroutines for example, or something else) 
+- [ ] Improve publish method performance (run in several goroutines for example, or something else) 
