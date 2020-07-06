@@ -1,2 +1,3 @@
 .idea/*
 vendor/*
+pubsub_bench_test.go
