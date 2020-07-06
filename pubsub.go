@@ -1,6 +1,6 @@
 /*
 	Simple in-memory implementation of Pub/Sub with polling an approach. You can use this package for building pub/sub
-	systems where the main method of obtaining data is poling (like cases with http). Messages are saved until the
+	systems where the main method of obtaining data is poling (like cases such as with http). Messages are saved until the
 	subscriber picks them up. This package uses []byte as "message format".
 
 	Each subscription stores an slice of pointers to messages (no copy - just pointers).

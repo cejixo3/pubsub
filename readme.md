@@ -1,6 +1,6 @@
 # A simple pub-sub
 Simple in-memory implementation of Pub/Sub with polling an approach. 
-You can use this package for building pub/sub systems where the main method of obtaining data is poling (like cases with http)
+You can use this package for building pub/sub systems where the main method of obtaining data is poling (like cases such as with http)
 	
 ### Requirements
 - Go 1.13. It must to work on a lower version but was tested only on 1.13
