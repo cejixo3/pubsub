@@ -79,3 +79,4 @@ make test
 - [ ] Add benchmarks 
 - [ ] Optimize map key sizes (use hashing for example)
 - [ ] Play with garbage collector for reducing gc count (in application, not library)
+- [ ] Improve naming in code 
