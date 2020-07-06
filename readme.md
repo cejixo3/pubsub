@@ -75,7 +75,7 @@ make test
 ### Todo
 - [ ] Prettify tests
 - [ ] Implement removing keys from p.t[tn] when subscription list is empty
-- [ ] Add ability to use custom storage
+- [ ] Add ability to use custom storage (for testing another data structures for example)
 - [ ] Add benchmarks 
 - [ ] Optimize map key sizes (use hashing for example)
 - [ ] Play with garbage collector for reducing gc count (in application, not library)
